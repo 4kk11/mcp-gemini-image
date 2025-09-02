@@ -1,28 +1,38 @@
-# Image name
-IMAGE_NAME = mcp-gemini-image
+.PHONY: docker-build docker-run docker-clean docker-tag docker-push npm-build npm-publish help
 
-# Docker build
+# Docker commands
 docker-build:
-	docker build -t $(IMAGE_NAME) .
+	docker build -t mcp-gemini-image . && docker image prune -f
 
-# Docker clean
+docker-run:
+	docker run -i --rm -v ./output:/app/temp mcp-gemini-image
+
 docker-clean:
-	docker rmi $(IMAGE_NAME) || true
+	docker rmi mcp-gemini-image
+	docker rmi 4kk11/mcp-gemini-image
 
-# Build TypeScript
-build:
+docker-tag: docker-build
+	docker tag mcp-gemini-image 4kk11/mcp-gemini-image
+
+docker-push: docker-tag
+	docker push 4kk11/mcp-gemini-image
+
+# NPM commands
+npm-build:
 	npm run build
 
-# Clean build
-clean:
-	rm -rf build/
+npm-publish: npm-build
+	npm publish
 
-# Install dependencies
-install:
-	npm install
-
-# Development build and run
-dev: build
-	node build/index.js
-
-.PHONY: docker-build docker-clean build clean install dev
+help:
+	@echo "Available commands:"
+	@echo "Docker commands:"
+	@echo "  make docker-build   - Build Docker image"
+	@echo "  make docker-run     - Run Docker container"
+	@echo "  make docker-clean   - Remove Docker image"
+	@echo "  make docker-tag     - Tag Docker image"
+	@echo "  make docker-push    - Push Docker image"
+	@echo ""
+	@echo "NPM commands:"
+	@echo "  make npm-build      - Build NPM package"
+	@echo "  make npm-publish    - Build and publish NPM package"
