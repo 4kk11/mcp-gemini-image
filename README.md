@@ -6,6 +6,10 @@
 An MCP server for generating, editing, and analyzing images using Google's Gemini API.  
 Generated images are saved in the specified directory and returned along with scaled-down preview images.
 
+
+https://github.com/user-attachments/assets/50b294c4-fb10-4614-9e3f-1393ad1972cd
+
+
 ## Key Features
 
 ### 1. Image Generation (generate_image)
