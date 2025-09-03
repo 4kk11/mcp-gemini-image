@@ -1,6 +1,6 @@
 # mcp-gemini-image
 
-Google の Gemini API を使用して画像を生成・編集するための MCP サーバーです。  
+Google の Gemini API を使用して画像を生成・編集・分析するための MCP サーバーです。  
 生成された画像は指定されたディレクトリに保存され、縮小されたプレビュー画像と共に返されます。
 
 ## 主な機能
@@ -17,6 +17,13 @@ Gemini のマルチモーダル機能を使用して、テキストプロンプ�
 **入力パラメータ:**
 - `image`: 編集する画像のファイルパス（必須）
 - `prompt`: 希望する編集や変更を説明するテキストプロンプト（必須）
+
+### 3. 画像分析 (analyze_image)
+Gemini 2.5 Flash の優れた視覚理解能力を使用して、画像を分析し品質確認や改善アドバイスを提供します。
+
+**入力パラメータ:**
+- `image`: 分析する画像のファイルパス（必須）
+- `prompt`: 画像について質問するテキストプロンプト（必須）
 
 ## インストール方法
 
@@ -114,6 +121,17 @@ docker build -t mcp-gemini-image .
   "arguments": {
     "image": "/path/to/your/image.jpg",
     "prompt": "空に虹を追加し、色をより鮮やかにしてください"
+  }
+}
+```
+
+### 画像分析
+```json
+{
+  "tool": "analyze_image",
+  "arguments": {
+    "image": "/path/to/your/image.jpg",
+    "prompt": "この画像の品質を評価し、改善点を教えてください"
   }
 }
 ```

@@ -16,6 +16,7 @@ import { GoogleGenAI } from "@google/genai";
 enum ToolName {
   GENERATE_IMAGE = "generate_image",
   EDIT_IMAGE = "edit_image",
+  ANALYZE_IMAGE = "analyze_image",
 }
 
 const GenerateImageSchema = z.object({
@@ -25,6 +26,11 @@ const GenerateImageSchema = z.object({
 const EditImageSchema = z.object({
   image: z.string().describe("編集する画像のファイルパス"),
   prompt: z.string().describe("編集内容を説明するテキストプロンプト"),
+});
+
+const AnalyzeImageSchema = z.object({
+  image: z.string().describe("分析する画像のファイルパス"),
+  prompt: z.string().describe("画像について質問するテキストプロンプト"),
 });
 
 // 画像保存用のディレクトリパスを環境変数から取得
@@ -70,6 +76,11 @@ export const createServer = async () => {
         name: ToolName.EDIT_IMAGE,
         description: "既存画像をプロンプトと組み合わせて新しい画像を生成",
         inputSchema: zodToJsonSchema(EditImageSchema) as Tool["inputSchema"],
+      },
+      {
+        name: ToolName.ANALYZE_IMAGE,
+        description: "画像を分析し、品質確認や改善アドバイスを提供",
+        inputSchema: zodToJsonSchema(AnalyzeImageSchema) as Tool["inputSchema"],
       },
     ];
 
@@ -246,6 +257,62 @@ export const createServer = async () => {
         throw new McpError(
           ErrorCode.InternalError,
           `Image editing failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+
+    if (name === ToolName.ANALYZE_IMAGE) {
+      const validatedArgs = AnalyzeImageSchema.parse(args);
+      const { image, prompt } = validatedArgs;
+
+      try {
+        // ファイルパスから画像を読み込む
+        if (!fs.existsSync(image)) {
+          throw new McpError(ErrorCode.InternalError, "指定された画像ファイルが存在しません");
+        }
+
+        const imageBuffer = fs.readFileSync(image);
+        const base64Image = imageBuffer.toString('base64');
+
+        // Gemini 2.5 Flashのマルチモーダル機能を使って画像を分析
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: prompt,
+                },
+                {
+                  inlineData: {
+                    mimeType: "image/png",
+                    data: base64Image,
+                  },
+                },
+              ],
+            },
+          ],
+        });
+
+        if (!response.candidates?.[0]?.content?.parts?.[0]?.text) {
+          throw new McpError(ErrorCode.InternalError, "画像分析に失敗しました: レスポンスデータが不正です");
+        }
+
+        const analysisResult = response.candidates[0].content.parts[0].text;
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: analysisResult,
+            },
+          ],
+        };
+      } catch (error) {
+        throw new McpError(
+          ErrorCode.InternalError,
+          `Image analysis failed: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }

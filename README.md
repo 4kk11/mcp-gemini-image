@@ -1,6 +1,6 @@
 # mcp-gemini-image
 
-An MCP server for generating and editing images using Google's Gemini API.  
+An MCP server for generating, editing, and analyzing images using Google's Gemini API.  
 Generated images are saved in the specified directory and returned along with scaled-down preview images.
 
 ## Key Features
@@ -17,6 +17,13 @@ Edits or generates variations of existing images based on text prompts using Gem
 **Input Parameters:**
 - `image`: File path of the image to edit (required)
 - `prompt`: Text prompt describing the desired edits or variations (required)
+
+### 3. Image Analysis (analyze_image)
+Analyzes images using Gemini 2.5 Flash's superior vision capabilities to provide quality assessment and improvement advice.
+
+**Input Parameters:**
+- `image`: File path of the image to analyze (required)
+- `prompt`: Text prompt asking questions about the image (required)
 
 ## Installation
 
@@ -114,6 +121,17 @@ This MCP server uses **Gemini 2.5 Flash Image Preview**, Google's native image g
   "arguments": {
     "image": "/path/to/your/image.jpg",
     "prompt": "Add a rainbow in the sky and make the colors more vibrant"
+  }
+}
+```
+
+### Image Analysis
+```json
+{
+  "tool": "analyze_image",
+  "arguments": {
+    "image": "/path/to/your/image.jpg",
+    "prompt": "Please evaluate the quality of this image and suggest improvements"
   }
 }
 ```
