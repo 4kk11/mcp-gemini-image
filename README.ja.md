@@ -1,7 +1,7 @@
 # mcp-gemini-image
 
 [![npm version](https://badge.fury.io/js/mcp-gemini-image.svg)](https://www.npmjs.com/package/mcp-gemini-image)
-[![Docker Hub](https://img.shields.io/docker/v/4kk11/mcp-gemini-image?label=docker)](https://hub.docker.com/repository/docker/4kk11/mcp-gemini-image/general)
+[![Docker Hub](https://img.shields.io/docker/v/4kk11/mcp-gemini-image?label=docker)](https://hub.docker.com/r/4kk11/mcp-gemini-image)
 
 Google の Gemini API を使用して画像を生成・編集・分析するための MCP サーバーです。  
 生成された画像は指定されたディレクトリに保存され、縮小されたプレビュー画像と共に返されます。

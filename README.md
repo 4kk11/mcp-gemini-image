@@ -1,7 +1,7 @@
 # mcp-gemini-image
 
 [![npm version](https://badge.fury.io/js/mcp-gemini-image.svg)](https://www.npmjs.com/package/mcp-gemini-image)
-[![Docker Hub](https://img.shields.io/docker/v/4kk11/mcp-gemini-image?label=docker)](https://hub.docker.com/repository/docker/4kk11/mcp-gemini-image/general)
+[![Docker Hub](https://img.shields.io/docker/v/4kk11/mcp-gemini-image?label=docker)](https://hub.docker.com/r/4kk11/mcp-gemini-image)
 
 An MCP server for generating, editing, and analyzing images using Google's Gemini API.  
 Generated images are saved in the specified directory and returned along with scaled-down preview images.
