@@ -15,22 +15,17 @@ import { GoogleGenAI } from "@google/genai";
 
 enum ToolName {
   GENERATE_IMAGE = "generate_image",
-  EDIT_IMAGE = "edit_image",
   ANALYZE_IMAGE = "analyze_image",
 }
 
 const GenerateImageSchema = z.object({
-  prompt: z.string().describe("テキストプロンプト"),
-});
-
-const EditImageSchema = z.object({
-  image: z.string().describe("編集する画像のファイルパス"),
-  prompt: z.string().describe("編集内容を説明するテキストプロンプト"),
+  prompt: z.string().describe("Text prompt (input in English)"),
+  images: z.array(z.string()).optional().describe("Array of reference image file paths (optional)"),
 });
 
 const AnalyzeImageSchema = z.object({
-  image: z.string().describe("分析する画像のファイルパス"),
-  prompt: z.string().describe("画像について質問するテキストプロンプト"),
+  prompt: z.string().describe("Text prompt to ask questions about the image (input in English)"),
+  images: z.array(z.string()).describe("Array of image file paths to analyze"),
 });
 
 // 画像保存用のディレクトリパスを環境変数から取得
@@ -69,17 +64,12 @@ export const createServer = async () => {
     const tools: Tool[] = [
       {
         name: ToolName.GENERATE_IMAGE,
-        description: "テキストプロンプトから画像を生成",
+        description: "Generate images from text prompts, or combine with reference images to create new images",
         inputSchema: zodToJsonSchema(GenerateImageSchema) as Tool["inputSchema"],
       },
       {
-        name: ToolName.EDIT_IMAGE,
-        description: "既存画像をプロンプトと組み合わせて新しい画像を生成",
-        inputSchema: zodToJsonSchema(EditImageSchema) as Tool["inputSchema"],
-      },
-      {
         name: ToolName.ANALYZE_IMAGE,
-        description: "画像を分析し、品質確認や改善アドバイスを提供",
+        description: "Analyze images and provide quality checks and improvement advice",
         inputSchema: zodToJsonSchema(AnalyzeImageSchema) as Tool["inputSchema"],
       },
     ];
@@ -93,12 +83,43 @@ export const createServer = async () => {
 
     if (name === ToolName.GENERATE_IMAGE) {
       const validatedArgs = GenerateImageSchema.parse(args);
-      const { prompt } = validatedArgs;
+      const { prompt, images } = validatedArgs;
 
       try {
+        let contents;
+        
+        if (images && images.length > 0) {
+          // 画像がある場合はマルチモーダルリクエストを構築
+          const parts = [{ text: prompt }];
+          
+          for (const imagePath of images) {
+            if (!fs.existsSync(imagePath)) {
+              throw new McpError(ErrorCode.InternalError, `指定された画像ファイルが存在しません: ${imagePath}`);
+            }
+            
+            const imageBuffer = fs.readFileSync(imagePath);
+            const base64Image = imageBuffer.toString('base64');
+            
+            parts.push({
+              inlineData: {
+                mimeType: "image/png",
+                data: base64Image,
+              },
+            } as any);
+          }
+          
+          contents = [{
+            role: "user",
+            parts,
+          }];
+        } else {
+          // 画像がない場合はテキストのみ
+          contents = prompt;
+        }
+
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash-image-preview",
-          contents: prompt,
+          contents,
         });
 
         if (!response.candidates?.[0]?.content?.parts) {
@@ -164,115 +185,31 @@ export const createServer = async () => {
       }
     }
 
-    if (name === ToolName.EDIT_IMAGE) {
-      const validatedArgs = EditImageSchema.parse(args);
-      const { image, prompt } = validatedArgs;
-
-      try {
-        // ファイルパスから画像を読み込む
-        if (!fs.existsSync(image)) {
-          throw new McpError(ErrorCode.InternalError, "指定された画像ファイルが存在しません");
-        }
-
-        const imageBuffer = fs.readFileSync(image);
-        const base64Image = imageBuffer.toString('base64');
-
-        // Geminiのマルチモーダル機能を使って画像編集
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash-image-preview",
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: prompt,
-                },
-                {
-                  inlineData: {
-                    mimeType: "image/png",
-                    data: base64Image,
-                  },
-                },
-              ],
-            },
-          ],
-        });
-
-        if (!response.candidates?.[0]?.content?.parts) {
-          throw new McpError(ErrorCode.InternalError, "画像編集に失敗しました: レスポンスデータが不正です");
-        }
-
-        const results = [];
-        
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData && part.inlineData.mimeType?.startsWith("image/") && part.inlineData.data) {
-            // Base64データをバッファに変換
-            const resultImageBuffer = Buffer.from(part.inlineData.data, 'base64');
-            
-            // 一時ファイルとして保存
-            const timestamp = new Date().getTime();
-            const filename = `edited_${timestamp}.png`;
-            const filepath = path.join(IMAGES_DIR, filename);
-            
-            // 元のサイズで保存
-            fs.writeFileSync(filepath, resultImageBuffer);
-
-            // 画像メタデータを取得
-            const metadata = await sharp(resultImageBuffer).metadata();
-            const width = metadata.width || 1024;
-            
-            // 4分の1サイズにリサイズ(プレビュー用)
-            const resizedImageBuffer = await sharp(resultImageBuffer)
-              .resize(Math.round(width / 4), undefined, {
-                fit: 'inside'
-              })
-              .png()
-              .toBuffer();
-
-            results.push({
-              filepath,
-              preview: resizedImageBuffer.toString('base64')
-            });
-          }
-        }
-
-        if (results.length === 0) {
-          throw new McpError(ErrorCode.InternalError, "画像編集に失敗しました: 画像が生成されませんでした");
-        }
-
-        return {
-          content: results.map(result => [
-            {
-              type: "text",
-              text: result.filepath,
-            },
-            {
-              type: "image",
-              data: result.preview,
-              mimeType: "image/png",
-            }
-          ]).flat(),
-        };
-      } catch (error) {
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Image editing failed: ${error instanceof Error ? error.message : String(error)}`
-        );
-      }
-    }
+    // EDIT_IMAGE は GENERATE_IMAGE に統合されたため削除
 
     if (name === ToolName.ANALYZE_IMAGE) {
       const validatedArgs = AnalyzeImageSchema.parse(args);
-      const { image, prompt } = validatedArgs;
+      const { images, prompt } = validatedArgs;
 
       try {
-        // ファイルパスから画像を読み込む
-        if (!fs.existsSync(image)) {
-          throw new McpError(ErrorCode.InternalError, "指定された画像ファイルが存在しません");
+        // 複数画像を分析用に準備
+        const parts = [{ text: prompt }];
+        
+        for (const imagePath of images) {
+          if (!fs.existsSync(imagePath)) {
+            throw new McpError(ErrorCode.InternalError, `指定された画像ファイルが存在しません: ${imagePath}`);
+          }
+          
+          const imageBuffer = fs.readFileSync(imagePath);
+          const base64Image = imageBuffer.toString('base64');
+          
+          parts.push({
+            inlineData: {
+              mimeType: "image/png",
+              data: base64Image,
+            },
+          } as any);
         }
-
-        const imageBuffer = fs.readFileSync(image);
-        const base64Image = imageBuffer.toString('base64');
 
         // Gemini 2.5 Flashのマルチモーダル機能を使って画像を分析
         const response = await ai.models.generateContent({
@@ -280,17 +217,7 @@ export const createServer = async () => {
           contents: [
             {
               role: "user",
-              parts: [
-                {
-                  text: prompt,
-                },
-                {
-                  inlineData: {
-                    mimeType: "image/png",
-                    data: base64Image,
-                  },
-                },
-              ],
+              parts,
             },
           ],
         });

@@ -6,24 +6,18 @@ Generated images are saved in the specified directory and returned along with sc
 ## Key Features
 
 ### 1. Image Generation (generate_image)
-Generates new images from text prompts using Google's Gemini 2.5 Flash Image model.
+Generates new images from text prompts using Google's Gemini 2.5 Flash Image model. Can also create variations or edits of existing images by providing reference images.
 
 **Input Parameters:**
-- `prompt`: Description of the image you want to generate (required)
+- `prompt`: Description of the image to generate or editing instructions (required)
+- `images`: Array of file paths for reference images (optional)
 
-### 2. Image Editing (edit_image)
-Edits or generates variations of existing images based on text prompts using Gemini's multimodal capabilities.
-
-**Input Parameters:**
-- `image`: File path of the image to edit (required)
-- `prompt`: Text prompt describing the desired edits or variations (required)
-
-### 3. Image Analysis (analyze_image)
+### 2. Image Analysis (analyze_image)
 Analyzes images using Gemini 2.5 Flash's superior vision capabilities to provide quality assessment and improvement advice.
 
 **Input Parameters:**
-- `image`: File path of the image to analyze (required)
 - `prompt`: Text prompt asking questions about the image (required)
+- `images`: Array of file paths for images to analyze (required)
 
 ## Installation
 
@@ -114,13 +108,13 @@ This MCP server uses **Gemini 2.5 Flash Image Preview**, Google's native image g
 }
 ```
 
-### Image Editing
+### Image Editing (using reference images)
 ```json
 {
-  "tool": "edit_image",
+  "tool": "generate_image",
   "arguments": {
-    "image": "/path/to/your/image.jpg",
-    "prompt": "Add a rainbow in the sky and make the colors more vibrant"
+    "prompt": "Add a rainbow in the sky and make the colors more vibrant",
+    "images": ["/path/to/your/image.jpg"]
   }
 }
 ```
@@ -130,8 +124,19 @@ This MCP server uses **Gemini 2.5 Flash Image Preview**, Google's native image g
 {
   "tool": "analyze_image",
   "arguments": {
-    "image": "/path/to/your/image.jpg",
-    "prompt": "Please evaluate the quality of this image and suggest improvements"
+    "prompt": "Please evaluate the quality of this image and suggest improvements",
+    "images": ["/path/to/your/image.jpg"]
+  }
+}
+```
+
+### Multiple Image Comparison
+```json
+{
+  "tool": "analyze_image",
+  "arguments": {
+    "prompt": "Compare these images and describe the differences",
+    "images": ["/path/to/image1.jpg", "/path/to/image2.jpg"]
   }
 }
 ```

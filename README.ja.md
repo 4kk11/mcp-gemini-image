@@ -6,24 +6,18 @@ Google の Gemini API を使用して画像を生成・編集・分析するた�
 ## 主な機能
 
 ### 1. 画像生成 (generate_image)
-Google の Gemini 2.5 Flash Image モデルを使用してテキストプロンプトから新しい画像を生成します。
+Google の Gemini 2.5 Flash Image モデルを使用してテキストプロンプトから新しい画像を生成します。また、参照画像を指定して編集やバリエーションを作成することもできます。
 
 **入力パラメータ:**
-- `prompt`: 生成したい画像の説明（必須）
+- `prompt`: 生成したい画像の説明または編集内容（必須）
+- `images`: 参照画像のファイルパス配列（オプション）
 
-### 2. 画像編集 (edit_image)
-Gemini のマルチモーダル機能を使用して、テキストプロンプトに基づいて既存の画像を編集または変更します。
-
-**入力パラメータ:**
-- `image`: 編集する画像のファイルパス（必須）
-- `prompt`: 希望する編集や変更を説明するテキストプロンプト（必須）
-
-### 3. 画像分析 (analyze_image)
+### 2. 画像分析 (analyze_image)
 Gemini 2.5 Flash の優れた視覚理解能力を使用して、画像を分析し品質確認や改善アドバイスを提供します。
 
 **入力パラメータ:**
-- `image`: 分析する画像のファイルパス（必須）
 - `prompt`: 画像について質問するテキストプロンプト（必須）
+- `images`: 分析する画像のファイルパス配列（必須）
 
 ## インストール方法
 
@@ -114,13 +108,13 @@ docker build -t mcp-gemini-image .
 }
 ```
 
-### 画像編集
+### 画像編集（参照画像を使った生成）
 ```json
 {
-  "tool": "edit_image",
+  "tool": "generate_image",
   "arguments": {
-    "image": "/path/to/your/image.jpg",
-    "prompt": "空に虹を追加し、色をより鮮やかにしてください"
+    "prompt": "空に虹を追加し、色をより鮮やかにしてください",
+    "images": ["/path/to/your/image.jpg"]
   }
 }
 ```
@@ -130,8 +124,19 @@ docker build -t mcp-gemini-image .
 {
   "tool": "analyze_image",
   "arguments": {
-    "image": "/path/to/your/image.jpg",
-    "prompt": "この画像の品質を評価し、改善点を教えてください"
+    "prompt": "この画像の品質を評価し、改善点を教えてください",
+    "images": ["/path/to/your/image.jpg"]
+  }
+}
+```
+
+### 複数画像の比較分析
+```json
+{
+  "tool": "analyze_image",
+  "arguments": {
+    "prompt": "これらの画像を比較して違いを教えてください",
+    "images": ["/path/to/image1.jpg", "/path/to/image2.jpg"]
   }
 }
 ```
