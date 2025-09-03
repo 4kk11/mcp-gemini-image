@@ -6,6 +6,10 @@
 Google の Gemini API を使用して画像を生成・編集・分析するための MCP サーバーです。  
 生成された画像は指定されたディレクトリに保存され、縮小されたプレビュー画像と共に返されます。
 
+
+https://github.com/user-attachments/assets/e871be40-91d0-4391-ba4c-b289b1ef1d1f
+
+
 ## 主な機能
 
 ### 1. 画像生成 (generate_image)
