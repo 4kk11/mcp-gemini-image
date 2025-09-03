@@ -21,11 +21,13 @@ enum ToolName {
 const GenerateImageSchema = z.object({
   prompt: z.string().describe("Text prompt (input in English)"),
   images: z.array(z.string()).optional().describe("Array of reference image file paths (optional)"),
+  temperature: z.number().min(0).max(1.0).optional().describe("Sampling temperature (0-1.0, default: 0.8)"),
 });
 
 const AnalyzeImageSchema = z.object({
   prompt: z.string().describe("Text prompt to ask questions about the image (input in English)"),
   images: z.array(z.string()).describe("Array of image file paths to analyze"),
+  temperature: z.number().min(0).max(1.0).optional().describe("Sampling temperature (0-1.0, default: 0.8)"),
 });
 
 // 画像保存用のディレクトリパスを環境変数から取得
@@ -83,7 +85,7 @@ export const createServer = async () => {
 
     if (name === ToolName.GENERATE_IMAGE) {
       const validatedArgs = GenerateImageSchema.parse(args);
-      const { prompt, images } = validatedArgs;
+      const { prompt, images, temperature = 0.8 } = validatedArgs;
 
       try {
         let contents;
@@ -120,6 +122,9 @@ export const createServer = async () => {
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash-image-preview",
           contents,
+          config: {
+            temperature,
+          }
         });
 
         if (!response.candidates?.[0]?.content?.parts) {
@@ -189,7 +194,7 @@ export const createServer = async () => {
 
     if (name === ToolName.ANALYZE_IMAGE) {
       const validatedArgs = AnalyzeImageSchema.parse(args);
-      const { images, prompt } = validatedArgs;
+      const { images, prompt, temperature = 0.8 } = validatedArgs;
 
       try {
         // 複数画像を分析用に準備
@@ -220,6 +225,9 @@ export const createServer = async () => {
               parts,
             },
           ],
+          config: {
+            temperature,
+          }
         });
 
         if (!response.candidates?.[0]?.content?.parts?.[0]?.text) {
