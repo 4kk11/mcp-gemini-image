@@ -9,14 +9,14 @@ Generated images are saved in the specified directory and returned along with sc
 ## Key Features
 
 ### 1. Image Generation (generate_image)
-Generates new images from text prompts using Google's Gemini 2.5 Flash Image model. Can also create variations or edits of existing images by providing reference images.
+Generates new images from text prompts using Google's Gemini 3 Pro Image model (Nano Banana Pro). Can also create variations or edits of existing images by providing reference images.
 
 **Input Parameters:**
 - `prompt`: Description of the image to generate or editing instructions (required)
 - `images`: Array of file paths for reference images (optional)
 
 ### 2. Image Analysis (analyze_image)
-Analyzes images using Gemini 2.5 Flash's superior vision capabilities to provide quality assessment and improvement advice.
+Analyzes images using Gemini 3 Pro's superior vision and reasoning capabilities to provide quality assessment and improvement advice.
 
 **Input Parameters:**
 - `prompt`: Text prompt asking questions about the image (required)
@@ -89,15 +89,23 @@ docker build -t mcp-gemini-image .
 4. Create a new API key or use an existing one
 5. Copy the API key and set it as the `GEMINI_API_KEY` environment variable
 
-## About Gemini 2.5 Flash Image
+## About Gemini 3 Models
 
-This MCP server uses **Gemini 2.5 Flash Image Preview**, Google's native image generation model that offers:
+This MCP server uses Google's latest Gemini 3 models:
 
-- **Conversational Image Generation**: Create and refine images through natural conversation
-- **High-Quality Output**: Excellent image quality with superior text rendering capabilities
-- **Multimodal Editing**: Edit existing images by combining them with text prompts
-- **Cost-Effective**: Approximately $0.039 per image generated
+### Gemini 3 Pro Image (Nano Banana Pro)
+For image generation, offering:
+- **Studio-Quality Output**: High-fidelity images with up to 4K resolution support
+- **Superior Text Rendering**: Excellent text rendering for infographics, menus, diagrams, and marketing assets
+- **Advanced Features**: Mix up to 14 reference images, localized edits, lighting adjustments, and camera transformations
+- **Real-World Grounding**: Enhanced with Google Search for better context and accuracy
 - **Iterative Refinement**: Make progressive improvements to images through multiple interactions
+
+### Gemini 3 Pro
+For image analysis, providing:
+- **State-of-the-Art Reasoning**: Advanced multimodal understanding and analysis capabilities
+- **1M Token Context Window**: Can comprehend vast datasets across text, images, video, PDFs, and code
+- **Superior Performance**: Tops the LMArena Leaderboard with breakthrough performance
 
 ## Usage Examples
 

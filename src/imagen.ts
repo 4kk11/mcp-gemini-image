@@ -120,7 +120,7 @@ export const createServer = async () => {
         }
 
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash-image-preview",
+          model: "gemini-3-pro-image-preview",
           contents,
           config: {
             temperature,
@@ -216,9 +216,9 @@ export const createServer = async () => {
           } as any);
         }
 
-        // Gemini 2.5 Flashのマルチモーダル機能を使って画像を分析
+        // Gemini 3 Proのマルチモーダル機能を使って画像を分析
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3-pro-preview",
           contents: [
             {
               role: "user",
