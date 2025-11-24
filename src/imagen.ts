@@ -20,7 +20,8 @@ enum ToolName {
 
 const GenerateImageSchema = z.object({
   prompt: z.string().describe("Text prompt (input in English)"),
-  images: z.array(z.string()).optional().describe("Array of reference image file paths (optional)"),
+  images: z.array(z.string()).optional().describe("Array of reference image file paths (absolute paths, optional)"),
+  output_dir: z.string().describe("Output directory path (absolute path) where generated images will be saved"),
   temperature: z.number().min(0).max(1.0).optional().describe("Sampling temperature (0-1.0, default: 0.8)"),
 });
 
@@ -29,16 +30,6 @@ const AnalyzeImageSchema = z.object({
   images: z.array(z.string()).describe("Array of image file paths to analyze"),
   temperature: z.number().min(0).max(1.0).optional().describe("Sampling temperature (0-1.0, default: 0.8)"),
 });
-
-// 画像保存用のディレクトリパスを環境変数から取得
-const IMAGES_DIR = process.env.IMAGES_DIR
-  ? path.resolve(process.env.IMAGES_DIR)
-  : path.join(process.cwd(), "temp");
-
-// 保存用ディレクトリが存在しない場合は作成
-if (!fs.existsSync(IMAGES_DIR)) {
-  fs.mkdirSync(IMAGES_DIR, { recursive: true });
-}
 
 export const createServer = async () => {
   const server = new Server(
@@ -85,9 +76,13 @@ export const createServer = async () => {
 
     if (name === ToolName.GENERATE_IMAGE) {
       const validatedArgs = GenerateImageSchema.parse(args);
-      const { prompt, images, temperature = 0.8 } = validatedArgs;
+      const { prompt, images, output_dir, temperature = 0.8 } = validatedArgs;
 
       try {
+        // 出力ディレクトリの存在確認と作成
+        if (!fs.existsSync(output_dir)) {
+          fs.mkdirSync(output_dir, { recursive: true });
+        }
         let contents;
         
         if (images && images.length > 0) {
@@ -138,11 +133,11 @@ export const createServer = async () => {
             // Base64データをバッファに変換
             const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
             
-            // 一時ファイルとして保存
+            // ファイルとして保存
             const timestamp = new Date().getTime();
             const filename = `generated_${timestamp}.png`;
-            const filepath = path.join(IMAGES_DIR, filename);
-            
+            const filepath = path.join(output_dir, filename);
+
             // 元のサイズで保存
             fs.writeFileSync(filepath, imageBuffer);
 

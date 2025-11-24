@@ -37,8 +37,7 @@ Configuration example (claude_desktop_config.json):
         "mcp-gemini-image"
       ],
       "env": {
-        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY",
-        "IMAGES_DIR": "YOUR_IMAGES_DIR"
+        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY"
       }
     }
   }
@@ -63,7 +62,7 @@ docker build -t mcp-gemini-image .
         "-i",
         "--rm",
         "-v",
-        "YOUR_IMAGES_DIR:/app/temp",
+        "/path/to/your/image/directory:/workspace",
         "-e",
         "GEMINI_API_KEY=YOUR_GEMINI_API_KEY",
         "mcp-gemini-image"
@@ -79,7 +78,6 @@ docker build -t mcp-gemini-image .
 |--------------|-------------|---------------|
 | GEMINI_API_KEY | Google Gemini API key (required) | - |
 | GOOGLE_API_KEY | Alternative name for Google API key | - |
-| IMAGES_DIR | Path to directory for saving generated/edited images | ./temp |
 
 ## Getting a Gemini API Key
 
@@ -114,7 +112,8 @@ For image analysis, providing:
 {
   "tool": "generate_image",
   "arguments": {
-    "prompt": "A serene mountain landscape at sunset with a lake reflection"
+    "prompt": "A serene mountain landscape at sunset with a lake reflection",
+    "output_dir": "/path/to/output/directory"
   }
 }
 ```
@@ -125,7 +124,8 @@ For image analysis, providing:
   "tool": "generate_image",
   "arguments": {
     "prompt": "Add a rainbow in the sky and make the colors more vibrant",
-    "images": ["/path/to/your/image.jpg"]
+    "images": ["/path/to/your/image.jpg"],
+    "output_dir": "/path/to/output/directory"
   }
 }
 ```
@@ -206,8 +206,8 @@ mcp-gemini-image/
 - Check that you have sufficient quota/credits in your Google AI Studio account
 
 ### Permission Issues
-- Make sure the `IMAGES_DIR` path exists and is writable
-- For Docker usage, ensure volume mounts have correct permissions
+- Make sure the `output_dir` path exists and is writable
+- For Docker usage, ensure volume mounts have correct permissions for both input images and output directories
 
 ### Model Availability
 - Some models may have regional availability restrictions

@@ -37,8 +37,7 @@ Gemini 3 Pro の優れた視覚理解と推論能力を使用して、画像を�
         "mcp-gemini-image"
       ],
       "env": {
-        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY",
-        "IMAGES_DIR": "YOUR_IMAGES_DIR"
+        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY"
       }
     }
   }
@@ -63,7 +62,7 @@ docker build -t mcp-gemini-image .
         "-i",
         "--rm",
         "-v",
-        "YOUR_IMAGES_DIR:/app/temp",
+        "/path/to/your/image/directory:/workspace",
         "-e",
         "GEMINI_API_KEY=YOUR_GEMINI_API_KEY",
         "mcp-gemini-image"
@@ -79,7 +78,6 @@ docker build -t mcp-gemini-image .
 |-------|------|-------------|
 | GEMINI_API_KEY | Google Gemini API キー（必須） | - |
 | GOOGLE_API_KEY | Google API キーの別名 | - |
-| IMAGES_DIR | 生成・編集された画像を保存するディレクトリのパス | ./temp |
 
 ## Gemini API キーの取得方法
 
@@ -114,7 +112,8 @@ docker build -t mcp-gemini-image .
 {
   "tool": "generate_image",
   "arguments": {
-    "prompt": "夕日の時間帯の静かな山の景色と湖面の反射"
+    "prompt": "夕日の時間帯の静かな山の景色と湖面の反射",
+    "output_dir": "/path/to/output/directory"
   }
 }
 ```
@@ -125,7 +124,8 @@ docker build -t mcp-gemini-image .
   "tool": "generate_image",
   "arguments": {
     "prompt": "空に虹を追加し、色をより鮮やかにしてください",
-    "images": ["/path/to/your/image.jpg"]
+    "images": ["/path/to/your/image.jpg"],
+    "output_dir": "/path/to/output/directory"
   }
 }
 ```
@@ -206,8 +206,8 @@ mcp-gemini-image/
 - Google AI Studio アカウントに十分なクォータ/クレジットがあることを確認してください
 
 ### 権限の問題
-- `IMAGES_DIR` パスが存在し書き込み可能であることを確認してください
-- Docker 使用時は、ボリュームマウントが正しい権限を持っていることを確認してください
+- `output_dir` パスが存在し書き込み可能であることを確認してください
+- Docker 使用時は、ボリュームマウントが正しい権限を持っていることを確認してください（入力画像と出力ディレクトリの両方）
 
 ### モデルの可用性
 - 一部のモデルには地域的な利用制限がある場合があります
