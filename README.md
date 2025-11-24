@@ -13,7 +13,14 @@ Generates new images from text prompts using Google's Gemini 3 Pro Image model (
 
 **Input Parameters:**
 - `prompt`: Description of the image to generate or editing instructions (required)
+- `output_dir`: Output directory path where generated images will be saved (required)
 - `images`: Array of file paths for reference images (optional)
+- `aspect_ratio`: Aspect ratio of the generated images (optional)
+  - Supported values: `"1:1"`, `"2:3"`, `"3:2"`, `"3:4"`, `"4:3"`, `"9:16"`, `"16:9"`, `"21:9"`
+- `image_size`: Size of the generated images (optional, default: `"1K"`)
+  - Supported values: `"1K"`, `"2K"`, `"4K"`
+- `temperature`: Sampling temperature for generation (optional, default: 0.8)
+  - Range: 0.0 to 1.0
 
 ### 2. Image Analysis (analyze_image)
 Analyzes images using Gemini 3 Pro's superior vision and reasoning capabilities to provide quality assessment and improvement advice.
@@ -21,6 +28,8 @@ Analyzes images using Gemini 3 Pro's superior vision and reasoning capabilities 
 **Input Parameters:**
 - `prompt`: Text prompt asking questions about the image (required)
 - `images`: Array of file paths for images to analyze (required)
+- `temperature`: Sampling temperature for analysis (optional, default: 0.8)
+  - Range: 0.0 to 1.0
 
 ## Installation
 
@@ -114,6 +123,19 @@ For image analysis, providing:
   "arguments": {
     "prompt": "A serene mountain landscape at sunset with a lake reflection",
     "output_dir": "/path/to/output/directory"
+  }
+}
+```
+
+### Image Generation with Custom Size and Aspect Ratio
+```json
+{
+  "tool": "generate_image",
+  "arguments": {
+    "prompt": "A futuristic cityscape at night with neon lights",
+    "output_dir": "/path/to/output/directory",
+    "aspect_ratio": "16:9",
+    "image_size": "4K"
   }
 }
 ```

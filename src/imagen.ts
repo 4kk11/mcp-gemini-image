@@ -23,6 +23,8 @@ const GenerateImageSchema = z.object({
   images: z.array(z.string()).optional().describe("Array of reference image file paths (absolute paths, optional)"),
   output_dir: z.string().describe("Output directory path (absolute path) where generated images will be saved"),
   temperature: z.number().min(0).max(1.0).optional().describe("Sampling temperature (0-1.0, default: 0.8)"),
+  aspect_ratio: z.enum(["1:1", "2:3", "3:2", "3:4", "4:3", "9:16", "16:9", "21:9"]).optional().describe("Aspect ratio of the generated images (optional)"),
+  image_size: z.enum(["1K", "2K", "4K"]).optional().describe("Size of the generated images: 1K, 2K, or 4K (optional, default: 1K)"),
 });
 
 const AnalyzeImageSchema = z.object({
@@ -76,7 +78,7 @@ export const createServer = async () => {
 
     if (name === ToolName.GENERATE_IMAGE) {
       const validatedArgs = GenerateImageSchema.parse(args);
-      const { prompt, images, output_dir, temperature = 0.8 } = validatedArgs;
+      const { prompt, images, output_dir, temperature = 0.8, aspect_ratio, image_size } = validatedArgs;
 
       try {
         // 出力ディレクトリの存在確認と作成
@@ -114,11 +116,21 @@ export const createServer = async () => {
           contents = prompt;
         }
 
+        // imageConfigの構築
+        const imageConfig: { aspectRatio?: string; imageSize?: string } = {};
+        if (aspect_ratio) {
+          imageConfig.aspectRatio = aspect_ratio;
+        }
+        if (image_size) {
+          imageConfig.imageSize = image_size;
+        }
+
         const response = await ai.models.generateContent({
           model: "gemini-3-pro-image-preview",
           contents,
           config: {
             temperature,
+            ...(Object.keys(imageConfig).length > 0 && { imageConfig }),
           }
         });
 
