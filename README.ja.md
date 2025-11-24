@@ -13,18 +13,27 @@ https://github.com/user-attachments/assets/e871be40-91d0-4391-ba4c-b289b1ef1d1f
 ## 主な機能
 
 ### 1. 画像生成 (generate_image)
-Google の Gemini 2.5 Flash Image モデルを使用してテキストプロンプトから新しい画像を生成します。また、参照画像を指定して編集やバリエーションを作成することもできます。
+Google の Gemini 3 Pro Image モデル（Nano Banana Pro）を使用してテキストプロンプトから新しい画像を生成します。また、参照画像を指定して編集やバリエーションを作成することもできます。
 
 **入力パラメータ:**
 - `prompt`: 生成したい画像の説明または編集内容（必須）
+- `output_dir`: 生成された画像を保存する出力ディレクトリパス（必須）
 - `images`: 参照画像のファイルパス配列（オプション）
+- `aspect_ratio`: 生成される画像のアスペクト比（オプション）
+  - 対応値: `"1:1"`, `"2:3"`, `"3:2"`, `"3:4"`, `"4:3"`, `"9:16"`, `"16:9"`, `"21:9"`
+- `image_size`: 生成される画像のサイズ（オプション、デフォルト: `"1K"`）
+  - 対応値: `"1K"`, `"2K"`, `"4K"`
+- `temperature`: 生成のサンプリング温度（オプション、デフォルト: 0.8）
+  - 範囲: 0.0 から 1.0
 
 ### 2. 画像分析 (analyze_image)
-Gemini 2.5 Flash の優れた視覚理解能力を使用して、画像を分析し品質確認や改善アドバイスを提供します。
+Gemini 3 Pro の優れた視覚理解と推論能力を使用して、画像を分析し品質確認や改善アドバイスを提供します。
 
 **入力パラメータ:**
 - `prompt`: 画像について質問するテキストプロンプト（必須）
 - `images`: 分析する画像のファイルパス配列（必須）
+- `temperature`: 分析のサンプリング温度（オプション、デフォルト: 0.8）
+  - 範囲: 0.0 から 1.0
 
 ## インストール方法
 
@@ -41,8 +50,7 @@ Gemini 2.5 Flash の優れた視覚理解能力を使用して、画像を分析
         "mcp-gemini-image"
       ],
       "env": {
-        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY",
-        "IMAGES_DIR": "YOUR_IMAGES_DIR"
+        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY"
       }
     }
   }
@@ -67,7 +75,7 @@ docker build -t mcp-gemini-image .
         "-i",
         "--rm",
         "-v",
-        "YOUR_IMAGES_DIR:/app/temp",
+        "/path/to/your/image/directory:/workspace",
         "-e",
         "GEMINI_API_KEY=YOUR_GEMINI_API_KEY",
         "mcp-gemini-image"
@@ -83,7 +91,6 @@ docker build -t mcp-gemini-image .
 |-------|------|-------------|
 | GEMINI_API_KEY | Google Gemini API キー（必須） | - |
 | GOOGLE_API_KEY | Google API キーの別名 | - |
-| IMAGES_DIR | 生成・編集された画像を保存するディレクトリのパス | ./temp |
 
 ## Gemini API キーの取得方法
 
@@ -93,15 +100,23 @@ docker build -t mcp-gemini-image .
 4. 新しい API キーを作成するか、既存のものを使用
 5. API キーをコピーして `GEMINI_API_KEY` 環境変数に設定
 
-## Gemini 2.5 Flash Image について
+## Gemini 3 モデルについて
 
-この MCP サーバーは **Gemini 2.5 Flash Image Preview** を使用します。Google のネイティブ画像生成モデルで、以下の特徴があります：
+この MCP サーバーは Google の最新 Gemini 3 モデルを使用します：
 
-- **対話的な画像生成**: 自然な会話を通じて画像を作成・改良
-- **高品質な出力**: 優秀なテキストレンダリング機能を持つ高品質な画像
-- **マルチモーダル編集**: テキストプロンプトと組み合わせて既存画像を編集
-- **コスト効率**: 画像あたり約 $0.039
+### Gemini 3 Pro Image（Nano Banana Pro）
+画像生成に使用され、以下の特徴があります：
+- **スタジオ品質の出力**: 最大 4K 解像度に対応した高品質な画像
+- **優れたテキストレンダリング**: インフォグラフィック、メニュー、図表、マーケティング素材に最適なテキスト描画
+- **高度な機能**: 最大 14 枚の参照画像の組み合わせ、局所的な編集、照明調整、カメラ変換に対応
+- **リアルワールドグラウンディング**: Google 検索で強化され、より正確なコンテキストと精度を実現
 - **反復的な改良**: 複数回のやり取りを通じて画像を段階的に改善
+
+### Gemini 3 Pro
+画像分析に使用され、以下を提供します：
+- **最先端の推論**: 高度なマルチモーダル理解と分析能力
+- **100万トークンのコンテキストウィンドウ**: テキスト、画像、動画、PDF、コードなど膨大なデータセットを理解可能
+- **優れたパフォーマンス**: LMArena リーダーボードでトップの画期的なパフォーマンス
 
 ## 使用例
 
@@ -110,7 +125,21 @@ docker build -t mcp-gemini-image .
 {
   "tool": "generate_image",
   "arguments": {
-    "prompt": "夕日の時間帯の静かな山の景色と湖面の反射"
+    "prompt": "夕日の時間帯の静かな山の景色と湖面の反射",
+    "output_dir": "/path/to/output/directory"
+  }
+}
+```
+
+### カスタムサイズとアスペクト比での画像生成
+```json
+{
+  "tool": "generate_image",
+  "arguments": {
+    "prompt": "ネオンライトが輝く夜の未来都市の風景",
+    "output_dir": "/path/to/output/directory",
+    "aspect_ratio": "16:9",
+    "image_size": "4K"
   }
 }
 ```
@@ -121,7 +150,8 @@ docker build -t mcp-gemini-image .
   "tool": "generate_image",
   "arguments": {
     "prompt": "空に虹を追加し、色をより鮮やかにしてください",
-    "images": ["/path/to/your/image.jpg"]
+    "images": ["/path/to/your/image.jpg"],
+    "output_dir": "/path/to/output/directory"
   }
 }
 ```
@@ -202,8 +232,8 @@ mcp-gemini-image/
 - Google AI Studio アカウントに十分なクォータ/クレジットがあることを確認してください
 
 ### 権限の問題
-- `IMAGES_DIR` パスが存在し書き込み可能であることを確認してください
-- Docker 使用時は、ボリュームマウントが正しい権限を持っていることを確認してください
+- `output_dir` パスが存在し書き込み可能であることを確認してください
+- Docker 使用時は、ボリュームマウントが正しい権限を持っていることを確認してください（入力画像と出力ディレクトリの両方）
 
 ### モデルの可用性
 - 一部のモデルには地域的な利用制限がある場合があります

@@ -20,8 +20,11 @@ enum ToolName {
 
 const GenerateImageSchema = z.object({
   prompt: z.string().describe("Text prompt (input in English)"),
-  images: z.array(z.string()).optional().describe("Array of reference image file paths (optional)"),
+  images: z.array(z.string()).optional().describe("Array of reference image file paths (absolute paths, optional)"),
+  output_dir: z.string().describe("Output directory path (absolute path) where generated images will be saved"),
   temperature: z.number().min(0).max(1.0).optional().describe("Sampling temperature (0-1.0, default: 0.8)"),
+  aspect_ratio: z.enum(["1:1", "2:3", "3:2", "3:4", "4:3", "9:16", "16:9", "21:9"]).optional().describe("Aspect ratio of the generated images (optional)"),
+  image_size: z.enum(["1K", "2K", "4K"]).optional().describe("Size of the generated images: 1K, 2K, or 4K (optional, default: 1K)"),
 });
 
 const AnalyzeImageSchema = z.object({
@@ -29,16 +32,6 @@ const AnalyzeImageSchema = z.object({
   images: z.array(z.string()).describe("Array of image file paths to analyze"),
   temperature: z.number().min(0).max(1.0).optional().describe("Sampling temperature (0-1.0, default: 0.8)"),
 });
-
-// 画像保存用のディレクトリパスを環境変数から取得
-const IMAGES_DIR = process.env.IMAGES_DIR
-  ? path.resolve(process.env.IMAGES_DIR)
-  : path.join(process.cwd(), "temp");
-
-// 保存用ディレクトリが存在しない場合は作成
-if (!fs.existsSync(IMAGES_DIR)) {
-  fs.mkdirSync(IMAGES_DIR, { recursive: true });
-}
 
 export const createServer = async () => {
   const server = new Server(
@@ -85,9 +78,13 @@ export const createServer = async () => {
 
     if (name === ToolName.GENERATE_IMAGE) {
       const validatedArgs = GenerateImageSchema.parse(args);
-      const { prompt, images, temperature = 0.8 } = validatedArgs;
+      const { prompt, images, output_dir, temperature = 0.8, aspect_ratio, image_size } = validatedArgs;
 
       try {
+        // 出力ディレクトリの存在確認と作成
+        if (!fs.existsSync(output_dir)) {
+          fs.mkdirSync(output_dir, { recursive: true });
+        }
         let contents;
         
         if (images && images.length > 0) {
@@ -119,11 +116,21 @@ export const createServer = async () => {
           contents = prompt;
         }
 
+        // imageConfigの構築
+        const imageConfig: { aspectRatio?: string; imageSize?: string } = {};
+        if (aspect_ratio) {
+          imageConfig.aspectRatio = aspect_ratio;
+        }
+        if (image_size) {
+          imageConfig.imageSize = image_size;
+        }
+
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash-image-preview",
+          model: "gemini-3-pro-image-preview",
           contents,
           config: {
             temperature,
+            ...(Object.keys(imageConfig).length > 0 && { imageConfig }),
           }
         });
 
@@ -138,11 +145,11 @@ export const createServer = async () => {
             // Base64データをバッファに変換
             const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
             
-            // 一時ファイルとして保存
+            // ファイルとして保存
             const timestamp = new Date().getTime();
             const filename = `generated_${timestamp}.png`;
-            const filepath = path.join(IMAGES_DIR, filename);
-            
+            const filepath = path.join(output_dir, filename);
+
             // 元のサイズで保存
             fs.writeFileSync(filepath, imageBuffer);
 
@@ -216,9 +223,9 @@ export const createServer = async () => {
           } as any);
         }
 
-        // Gemini 2.5 Flashのマルチモーダル機能を使って画像を分析
+        // Gemini 3 Proのマルチモーダル機能を使って画像を分析
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3-pro-preview",
           contents: [
             {
               role: "user",
